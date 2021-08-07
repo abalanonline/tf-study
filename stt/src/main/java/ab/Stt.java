@@ -1,17 +1,19 @@
 package ab;
 
+import com.google.api.gax.longrunning.OperationTimedPollAlgorithm;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.speech.v1.LongRunningRecognizeResponse;
 import com.google.cloud.speech.v1.RecognitionAudio;
 import com.google.cloud.speech.v1.RecognitionConfig;
 import com.google.cloud.speech.v1.SpeechClient;
 import com.google.cloud.speech.v1.SpeechRecognitionAlternative;
 import com.google.cloud.speech.v1.SpeechRecognitionResult;
+import com.google.cloud.speech.v1.SpeechSettings;
 import com.google.cloud.speech.v1.WordInfo;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import com.google.protobuf.Duration;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -38,11 +40,13 @@ public class Stt {
   }
 
   public static List<SpeechRecognitionResult> listStt(String gsUri) {
+    SpeechSettings.Builder settings = SpeechSettings.newBuilder();
+    settings.longRunningRecognizeOperationSettings().setPollingAlgorithm(pollOfHours(2));
     RecognitionAudio audio = RecognitionAudio.newBuilder().setUri(gsUri).build();
     RecognitionConfig config = RecognitionConfig.newBuilder().setLanguageCode("en-US").setEnableWordTimeOffsets(true) // timecode
         //.setEncoding(RecognitionConfig.AudioEncoding.LINEAR16).setSampleRateHertz(16000)
         .build();
-    try (SpeechClient speechClient = SpeechClient.create()) {
+    try (SpeechClient speechClient = SpeechClient.create(settings.build())) {
       LongRunningRecognizeResponse response = speechClient.longRunningRecognizeAsync(config, audio).get();
       // RecognizeResponse response = speechClient.recognize(config, audio);
       return response.getResultsList();
@@ -53,7 +57,17 @@ public class Stt {
     }
   }
 
-  public static String toString(Duration duration) {
+  public static OperationTimedPollAlgorithm pollOfHours(int hours) {
+    // https://github.com/googleapis/java-speech/issues/207
+    return OperationTimedPollAlgorithm.create(RetrySettings.newBuilder()
+        .setInitialRetryDelay(org.threeten.bp.Duration.ofSeconds(5))
+        .setRetryDelayMultiplier(1.5)
+        .setMaxRetryDelay(org.threeten.bp.Duration.ofSeconds(45))
+        .setTotalTimeout(org.threeten.bp.Duration.ofHours(hours))
+        .build());
+  }
+
+  public static String toString(com.google.protobuf.Duration duration) {
     return String.format("%d.%03d", duration.getSeconds(), duration.getNanos() / 1_000_000);
   }
 
