@@ -24,12 +24,12 @@ public class RawTextProcess implements Runnable {
 
   public static final Pattern RAW_TEXT_PATTERN = Pattern.compile("(\\d)\\s(\\d+)\\.(\\d{3})\\s(\\d+)\\.(\\d{3})\\s(.*)");
   public static final Pattern DIGITS_PATTERN = Pattern.compile(".*[0123456789].*");
-  public static final Pattern DIGITS_PERIOD_COMMA = Pattern.compile("[0123456789,\\.]+");
+  public static final Pattern DIGITS_COMMA = Pattern.compile("[0123456789,]+");
   public static final DateTimeFormatter SRT_TIMECODE = DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
 
   RuleBasedNumberFormat ruleBasedNumberFormat;
   public String fromNumber(String s) {
-    if (DIGITS_PERIOD_COMMA.matcher(s).matches()) s = s.replace(",", "");
+    if (DIGITS_COMMA.matcher(s).matches()) s = s.replace(",", "");
     if (s.startsWith("$")) try {
       return ruleBasedNumberFormat.format(Long.parseLong(s.substring(1))) + " dollars";
     } catch (NumberFormatException ignored) {}
@@ -124,7 +124,7 @@ public class RawTextProcess implements Runnable {
 
   @AllArgsConstructor
   public static class SrtItem {
-    public static final int MAGIC_JOIN_LIMIT = 80;
+    public static final int TRANSCRIPT_LIMIT = 80;
     private final int speakerTag;
     private final Duration start;
     private final Duration end;
@@ -141,7 +141,7 @@ public class RawTextProcess implements Runnable {
       } else {
         return Optional.empty();
       }
-      return b.transcript.length() + a.transcript.length() > MAGIC_JOIN_LIMIT ? Optional.empty() :
+      return b.transcript.length() + a.transcript.length() >= TRANSCRIPT_LIMIT ? Optional.empty() :
           Optional.of(new SrtItem(b.speakerTag, b.start, a.end, b.transcript + " " + a.transcript));
     }
   }
