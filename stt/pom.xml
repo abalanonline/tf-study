@@ -57,6 +57,11 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-speech</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.ibm.icu</groupId>
+      <artifactId>icu4j</artifactId>
+      <version>69.1</version>
+    </dependency>
 
     <!-- lombok -->
     <dependency>

@@ -91,13 +91,18 @@ public class Stt implements Runnable {
     return String.format("%d.%03d", duration.getSeconds(), duration.getNanos() / 1_000_000);
   }
 
-  public static Set<String> listFlacs() {
+  public static Set<String> listFilesExt(String fileExt) {
+    final String ext = fileExt.startsWith(".") ? fileExt : "." + fileExt;
     try (Stream<Path> stream = Files.list(Paths.get("."))) {
       return stream.map(Path::getFileName).map(Path::toString)
-          .filter(name -> name.endsWith(".flac")).collect(Collectors.toSet());
+          .filter(name -> name.endsWith(ext)).collect(Collectors.toSet());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  public static Set<String> listFlacs() {
+    return listFilesExt("flac");
   }
 
   // fr-CA_live_news_test_July.flac
