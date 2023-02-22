@@ -17,17 +17,25 @@
 package ab;
 
 import org.tensorflow.Graph;
+import org.tensorflow.Session;
 import org.tensorflow.TensorFlow;
 import org.tensorflow.ndarray.NdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.ndarray.StdArrays;
 import org.tensorflow.op.OpScope;
+import org.tensorflow.op.Operands;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.Scope;
 import org.tensorflow.op.core.Constant;
+import org.tensorflow.op.core.Placeholder;
+import org.tensorflow.op.data.CSVDataset;
+import org.tensorflow.types.TBool;
 import org.tensorflow.types.TFloat64;
 import org.tensorflow.types.TInt32;
+import org.tensorflow.types.TInt64;
 import org.tensorflow.types.TString;
+
+import java.util.Collections;
 
 // freecodecamp.org TensorFlow in 7 hours https://abstrusegoose.com/249
 public class App {
@@ -51,7 +59,40 @@ public class App {
     System.out.println(tensor1);
   }
 
-  public static void main(String[] args) {
-    m2();
+  public static void m3() {
+    Graph graph = new Graph();
+    Ops tf = Ops.create(graph);
+    Scope scope = new OpScope(graph);
+
+    Placeholder<TString> filename = new Placeholder<>(scope.opBuilder(Placeholder.OP_NAME, "filename").setAttr("dtype", Operands.toDataType(TString.class)).build());
+    CSVDataset csvDataset = CSVDataset.create(scope,
+        filename,
+        tf.placeholder(TString.class), // compressionType
+        tf.placeholder(TInt64.class),
+        tf.placeholder(TBool.class), tf.placeholder(TString.class), tf.placeholder(TBool.class),
+        tf.placeholder(TString.class), tf.placeholder(TInt64.class), Collections.singletonList(tf.placeholder(TString.class)),
+        tf.placeholder(TInt64.class), Collections.singletonList(Shape.of(-1,-1)));
+
+    // run
+    new Session(graph).runner()
+        .feed("filename", TString.scalarOf("dataset.csv"))
+        .feed("Placeholder", TString.scalarOf(""))
+        .feed("Placeholder_1", TInt64.scalarOf(4194304))
+        .feed("Placeholder_2", TBool.scalarOf(false))
+        .feed("Placeholder_3", TString.scalarOf(","))
+        .feed("Placeholder_4", TBool.scalarOf(true))
+        .feed("Placeholder_5", TString.scalarOf(""))
+        .feed("Placeholder_6", TInt64.vectorOf()) // select_cols
+        .feed("Placeholder_7", TString.scalarOf(""))
+        .feed("Placeholder_8", TInt64.vectorOf())
+        .addTarget(csvDataset).run();
+    System.out.println(csvDataset.handle() + " " + csvDataset.handle().shape());
+    // https://storage.googleapis.com/tf-datasets/titanic/train.csv
+    // https://storage.googleapis.com/tf-datasets/titanic/eval.csv
   }
+
+  public static void main(String[] args) {
+    m3();
+  }
+
 }
