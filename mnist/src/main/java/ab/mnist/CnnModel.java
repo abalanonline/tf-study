@@ -44,12 +44,14 @@ import org.tensorflow.op.nn.Conv2d;
 import org.tensorflow.op.nn.MaxPool;
 import org.tensorflow.op.nn.Relu;
 import org.tensorflow.op.nn.Softmax;
-import org.tensorflow.op.nn.raw.SoftmaxCrossEntropyWithLogits;
+import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TUint8;
 
 import java.io.Closeable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,6 +62,7 @@ import java.util.logging.Logger;
 public class CnnModel implements NnModel, Closeable {
 
   private static final Logger logger = Logger.getLogger(CnnModel.class.getName());
+  public static final int REFERENCE_MS = 30000;
 
   private static final int PIXEL_DEPTH = 255;
   private static final int NUM_CHANNELS = 1;
@@ -74,7 +77,6 @@ public class CnnModel implements NnModel, Closeable {
   public static final String TARGET = "target";
   public static final String TRAIN = "train";
   public static final String TRAINING_LOSS = "training_loss";
-  public static final String INIT = "init";
 
   private final Graph graph;
   private final Session session;
@@ -157,7 +159,7 @@ public class CnnModel implements NnModel, Closeable {
     // Loss function & regularization
     OneHot<TFloat32> oneHot = tf
         .oneHot(labels, tf.constant(10), tf.constant(1.0f), tf.constant(0.0f));
-    SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.raw
+    SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn
             .softmaxCrossEntropyWithLogits(logits, oneHot);
     Mean<TFloat32> labelLoss = tf.math.mean(batchLoss.loss(), tf.constant(0));
     Add<TFloat32> regularizers = tf.math.add(tf.nn.l2Loss(fc1Weights), tf.math
@@ -197,17 +199,11 @@ public class CnnModel implements NnModel, Closeable {
     logger.info("Optimizer = " + optimizer.toString());
     Op minimize = optimizer.minimize(loss, TRAIN);
 
-    tf.init();
-
     session = new Session(graph);
   }
 
   @Override
   public void train(MnistDataset dataset, int batchSize, int maxSize) {
-    // Initialises the parameters.
-    session.runner().addTarget(INIT).run();
-    logger.info("Initialised the model parameters");
-
     int interval = 0;
     // Train the model
     int trainLimit = maxSize;
@@ -244,7 +240,7 @@ public class CnnModel implements NnModel, Closeable {
               .fetch(OUTPUT_NAME).run().get(0)) {
 
         ByteNdArray labelBatch = trainingBatch.labels();
-        for (int k = 0; k < labelBatch.shape().size(0); k++) {
+        for (int k = 0; k < labelBatch.shape().get(0); k++) {
           byte trueLabel = labelBatch.getByte(k);
           int predLabel;
 
@@ -287,7 +283,7 @@ public class CnnModel implements NnModel, Closeable {
   public static int argmax(FloatNdArray probabilities) {
     float maxVal = Float.NEGATIVE_INFINITY;
     int idx = 0;
-    for (int i = 0; i < probabilities.shape().size(0); i++) {
+    for (int i = 0; i < probabilities.shape().get(0); i++) {
       float curVal = probabilities.getFloat(i);
       if (curVal > maxVal) {
         maxVal = curVal;
@@ -306,10 +302,13 @@ public class CnnModel implements NnModel, Closeable {
   public static void main(String[] args) {
     MnistDataset dataset = Common.createMnistDataset();
     logger.info("Loaded data.");
+    Instant now = Instant.now();
     try (CnnModel cnnModel = new CnnModel("sgd")) {
       cnnModel.train(dataset, Common.TRAIN_BATCH_SIZE, Common.TRAIN_BATCH_SIZE);
       logger.info("Trained model");
       cnnModel.test(dataset, Common.TRAIN_BATCH_SIZE);
     }
+    int ms = (int) Duration.between(now, Instant.now()).toMillis();
+    System.out.printf("%dms %f%%%n", ms, 100.0 * REFERENCE_MS / ms);
   }
 }

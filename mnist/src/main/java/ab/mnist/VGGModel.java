@@ -36,7 +36,7 @@ import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Conv2d;
 import org.tensorflow.op.nn.MaxPool;
 import org.tensorflow.op.nn.Relu;
-import org.tensorflow.op.nn.raw.SoftmaxCrossEntropyWithLogits;
+import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TUint8;
@@ -61,7 +61,6 @@ public class VGGModel implements NnModel, AutoCloseable {
     public static final String TARGET = "target";
     public static final String TRAIN = "train";
     public static final String TRAINING_LOSS = "training_loss";
-    public static final String INIT = "init";
 
     private static final Logger logger = Logger.getLogger(VGGModel.class.getName());
 
@@ -124,8 +123,6 @@ public class VGGModel implements NnModel, AutoCloseable {
 
         optimizer.minimize(loss, TRAIN);
 
-        tf.init();
-
         return graph;
     }
 
@@ -156,7 +153,7 @@ public class VGGModel implements NnModel, AutoCloseable {
         // Loss function & regularization
         OneHot<TFloat32> oneHot = tf
                 .oneHot(labels, tf.constant(10), tf.constant(1.0f), tf.constant(0.0f));
-        SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.raw
+        SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn
                 .softmaxCrossEntropyWithLogits(logits, oneHot);
         Mean<TFloat32> labelLoss = tf.math.mean(batchLoss.loss(), tf.constant(0));
         Add<TFloat32> regularizers = tf.math.add(tf.nn.l2Loss(fc1Weights), tf.math
@@ -191,10 +188,6 @@ public class VGGModel implements NnModel, AutoCloseable {
 
     @Override
     public void train(MnistDataset dataset, int minibatchSize, int maxSize) {
-        // Initialises the parameters.
-        session.runner().addTarget(INIT).run();
-        logger.info("Initialised the model parameters");
-
         int interval = 0;
         // Train the model
         int trainLimit = maxSize;
@@ -231,7 +224,7 @@ public class VGGModel implements NnModel, AutoCloseable {
                          .fetch(OUTPUT_NAME).run().get(0)) {
 
                 ByteNdArray labelBatch = trainingBatch.labels();
-                for (int k = 0; k < labelBatch.shape().size(0); k++) {
+                for (int k = 0; k < labelBatch.shape().get(0); k++) {
                     byte trueLabel = labelBatch.getByte(k);
                     int predLabel;
 
@@ -274,7 +267,7 @@ public class VGGModel implements NnModel, AutoCloseable {
     public static int argmax(FloatNdArray probabilities) {
         float maxVal = Float.NEGATIVE_INFINITY;
         int idx = 0;
-        for (int i = 0; i < probabilities.shape().size(0); i++) {
+        for (int i = 0; i < probabilities.shape().get(0); i++) {
             float curVal = probabilities.getFloat(i);
             if (curVal > maxVal) {
                 maxVal = curVal;

@@ -58,16 +58,11 @@ public class SimpleMnist implements NnModel, Closeable {
 
     // Create weights with an initial value of 0
     Shape weightShape = Shape.of(dataset.imageSize(), MnistDataset.NUM_CLASSES);
-    Variable<TFloat32> weights = tf.variable(weightShape, TFloat32.class);
-    tf.initAdd(tf.assign(weights, tf.zerosLike(weights)));
+    Variable<TFloat32> weights = tf.variable(tf.zeros(tf.constant(weightShape), TFloat32.class));
 
     // Create biases with an initial value of 0
     Shape biasShape = Shape.of(MnistDataset.NUM_CLASSES);
-    Variable<TFloat32> biases = tf.variable(biasShape, TFloat32.class);
-    tf.initAdd(tf.assign(biases, tf.zerosLike(biases)));
-
-    // Register all variable initializers for single execution
-    tf.init();
+    Variable<TFloat32> biases = tf.variable(tf.zeros(tf.constant(biasShape), TFloat32.class));
 
     // Predict the class of each image in the batch and compute the loss
     softmax =
@@ -80,9 +75,6 @@ public class SimpleMnist implements NnModel, Closeable {
 
     // Run the graph
     session = new Session(graph);
-
-    // Initialize variables
-    session.run(tf.init());
   }
 
   private static final float LEARNING_RATE = 0.2f;
@@ -189,7 +181,7 @@ public class SimpleMnist implements NnModel, Closeable {
                .fetch("output").run().get(0)) {
 
         ByteNdArray labelBatch = trainingBatch.labels();
-        for (int k = 0; k < labelBatch.shape().size(0); k++) {
+        for (int k = 0; k < labelBatch.shape().get(0); k++) {
           byte trueLabel = labelBatch.getByte(k);
           int predLabel;
 

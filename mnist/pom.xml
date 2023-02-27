@@ -27,35 +27,26 @@
   <version>0.0.0</version>
 
   <properties>
-    <java.version>1.8</java.version>
+    <java.version>11</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <manifest.mainClass>ab.mnist.SimpleMnist</manifest.mainClass>
+    <manifest.mainClass>ab.mnist.CnnModel</manifest.mainClass>
   </properties>
 
   <dependencies>
 
     <dependency>
       <groupId>org.tensorflow</groupId>
-      <artifactId>tensorflow-core-platform-mkl</artifactId>
-      <version>0.3.2</version>
+      <artifactId>tensorflow-core-platform-gpu</artifactId>
+      <version>0.5.0</version>
     </dependency>
     <dependency>
       <groupId>org.tensorflow</groupId>
       <artifactId>tensorflow-framework</artifactId>
-      <version>0.3.2</version>
+      <version>0.5.0</version>
     </dependency>
-
-    <!-- lombok -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.16</version>
-      <scope>provided</scope>
-    </dependency>
-
   </dependencies>
 
   <build>

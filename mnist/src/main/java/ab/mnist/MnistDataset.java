@@ -78,15 +78,15 @@ public class MnistDataset {
   }
 
   public long numTrainingExamples() {
-    return trainingLabels.shape().size(0);
+    return trainingLabels.shape().get(0);
   }
 
   public long numTestingExamples() {
-    return testLabels.shape().size(0);
+    return testLabels.shape().get(0);
   }
 
   public long numValidationExamples() {
-    return validationLabels.shape().size(0);
+    return validationLabels.shape().get(0);
   }
 
   private static final int TYPE_UBYTE = 0x08;

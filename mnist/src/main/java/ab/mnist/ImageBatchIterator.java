@@ -16,7 +16,6 @@
  */
 package ab.mnist;
 
-import ab.mnist.ImageBatch;
 import org.tensorflow.ndarray.ByteNdArray;
 import org.tensorflow.ndarray.index.Index;
 
@@ -44,7 +43,7 @@ public class ImageBatchIterator implements Iterator<ImageBatch> {
     this.batchSize = batchSize;
     this.images = images;
     this.labels = labels;
-    this.numImages = images != null ? images.shape().size(0) : 0;
+    this.numImages = images != null ? images.shape().get(0) : 0;
     this.batchStart = 0;
   }
 
