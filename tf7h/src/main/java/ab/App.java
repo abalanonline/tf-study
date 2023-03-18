@@ -29,18 +29,24 @@ import org.tensorflow.op.Scope;
 import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.data.CSVDataset;
+import org.tensorflow.proto.util.testlog.AvailableDeviceInfo;
 import org.tensorflow.types.TBool;
 import org.tensorflow.types.TFloat64;
 import org.tensorflow.types.TInt32;
 import org.tensorflow.types.TInt64;
 import org.tensorflow.types.TString;
 
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 // freecodecamp.org TensorFlow in 7 hours https://abstrusegoose.com/249
 public class App {
 
   public static void m2() {
+    System.out.println(AvailableDeviceInfo.getDefaultInstance().getPhysicalDescription());
     System.out.println("TensorFlow version " + TensorFlow.version());
     Graph graph = new Graph();
     Scope scope = new OpScope(graph);
@@ -91,8 +97,31 @@ public class App {
     // https://storage.googleapis.com/tf-datasets/titanic/eval.csv
   }
 
+  public void m4() {
+    InputStream csv;
+    //csv = new URL("https://storage.googleapis.com/tf-datasets/titanic/eval.csv").openStream();
+    csv = getClass().getResourceAsStream("/titanic/eval.csv");
+    TfCsv tfCsv = new TfCsv(Arrays.asList(
+        TInt32.scalarOf(0), // survived
+        TString.scalarOf(""), // sex
+        TFloat64.scalarOf(0), // age
+        TInt32.scalarOf(0), // n_siblings_spouses
+        TInt32.scalarOf(0), // parch
+        TFloat64.scalarOf(0), // fare
+        TString.scalarOf(""), // class
+        TString.scalarOf(""), // deck
+        TString.scalarOf(""), // embark_town
+        TString.scalarOf("") // alone
+    ));
+    List<NdArray<?>> result = tfCsv.run(csv);
+    System.out.println(result.get(5).streamOfObjects().map(Object::toString).collect(Collectors.joining(", ")));
+
+    Graph graph = new Graph();
+    Ops tf = Ops.create(graph);
+  }
+
   public static void main(String[] args) {
-    m3();
+    new App().m4();
   }
 
 }
