@@ -19,5 +19,10 @@ model.compile(optimizer='adam',
 model.fit(x_train, y_train, epochs=5)
 model.evaluate(x_test,  y_test, verbose=2)
 
-model.save("model_save_test")
-!zip -r model_save_test.zip model_save_test/
+model.save("model_data")
+!zip -r model_save_test.zip model_data/
+!rm -rf model_data/
+!cp model_save_test.zip model_load_test.zip
+!unzip -o model_load_test.zip
+model_copy = tf.keras.models.load_model("model_data")
+model_copy.evaluate(x_test,  y_test)
